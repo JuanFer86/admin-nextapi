@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse, NextRequest } from "next/server";
-import { boolean, object, string } from "yup";
+import { array, boolean, object, string } from "yup";
+
+const deleteSchema = array(string());
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -41,6 +43,26 @@ export async function POST(request: Request) {
     const todo = await prisma.todo.create({ data: { description, complete } });
 
     return NextResponse.json(todo);
+  } catch (error) {
+    return NextResponse.json(error, { status: 400 });
+  }
+}
+
+export async function DELETE(req: Request) {
+  try {
+    const body = await deleteSchema.validate(await req.json());
+
+    const deletedTodo = await prisma.todo.deleteMany({
+      where: {
+        id: {
+          in: body as string[],
+        },
+      },
+    });
+
+    return NextResponse.json({
+      message: "Todo Deleted",
+    });
   } catch (error) {
     return NextResponse.json(error, { status: 400 });
   }
